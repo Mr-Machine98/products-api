@@ -1,0 +1,22 @@
+# Comando para crear el topico especifico
+docker exec -it kafka /opt/kafka/bin/kafka-topics.sh `
+--bootstrap-server localhost:9092 `
+--create --topic products.commands `
+--partitions 1 --replication-factor 1
+
+# Commando para listar los topicos creados
+docker exec -it kafka /opt/kafka/bin/kafka-topics.sh `
+--bootstrap-server localhost:9092 `
+--list
+
+# Comando para leer/escuchar mensajes de un topic de Kafka en tiempo real desde la terminal.
+docker exec -it kafka /opt/kafka/bin/kafka-console-consumer.sh `
+--bootstrap-server localhost:9092 `
+--topic products.commands `
+--from-beginning
+
+
+# Comando para enviar una peticion via curl
+curl -X POST http://localhost:8080/products `
+-H "Content-Type: application/json" `
+-d '{"name": "Teclado Mecanico", "price": 12.9}'
