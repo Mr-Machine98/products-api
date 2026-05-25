@@ -3,7 +3,9 @@ package org.juanka.course.springcloud.kafka.api.services;
 import org.juanka.course.springcloud.kafka.api.models.Command;
 import org.juanka.course.springcloud.kafka.api.models.dto.ProductDto;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.stereotype.Service;
 
+@Service
 public class ProductCommandServiceImpl implements IProductCommandService {
 
 	private final StreamBridge bridge;
