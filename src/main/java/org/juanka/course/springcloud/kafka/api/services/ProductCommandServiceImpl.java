@@ -1,132 +1,72 @@
 package org.juanka.course.springcloud.kafka.api.services;
 
+import java.time.Duration;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.juanka.course.springcloud.kafka.api.messaging.ReplyInbox;
 import org.juanka.course.springcloud.kafka.api.models.Command;
 import org.juanka.course.springcloud.kafka.api.models.dto.ProductDto;
+import org.juanka.course.springcloud.kafka.api.models.dto.Reply;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
-/**
- * Servicio encargado de enviar comandos relacionados
- * con productos hacia Kafka utilizando Spring Cloud Stream.
- *
- * <p>
- * Esta clase implementa la interfaz {@code IProductCommandService}
- * y actua como productor de mensajes.
- * </p>
- *
- * <p>
- * Su responsabilidad principal es construir comandos
- * y enviarlos al broker Kafka mediante StreamBridge.
- * </p>
- *
- * <p>
- * Ejemplo de flujo:
- * </p>
- *
- * <pre>
- * Cliente HTTP
- *      ↓
- * Controller
- *      ↓
- * ProductCommandServiceImpl
- *      ↓
- * Kafka Topic
- *      ↓
- * Consumer
- * </pre>
- *
- * <p>
- * Esta arquitectura permite desacoplar servicios
- * utilizando comunicacion asincrona basada en eventos.
- * </p>
- *
- * @author Juan
- * @version 1.0
- */
 @Service
 public class ProductCommandServiceImpl implements IProductCommandService {
 
-	// StreamBridge permite enviar mensajes dinamicamente
-	// hacia canales definidos en Spring Cloud Stream.
-	//
-	// Funciona como un puente entre la aplicacion
-	// y el broker de mensajeria (Kafka).
+	// Inyeccion de la dependencia StreamBridge para enviar mensajes a kafka
 	private final StreamBridge bridge;
+
+    // Logger para registrar mensajes de log
+	private static final Logger logger = LoggerFactory.getLogger(ProductCommandServiceImpl.class);
+
+	// Inyeccion de la dependencia ReplyInbox para registrar y esperar respuestas de kafka
+	private final ReplyInbox replyInbox;
 	
-	
-	/**
-	 * Constructor con inyeccion de dependencias.
-	 *
-	 * <p>
-	 * Spring automaticamente inyecta una instancia
-	 * de StreamBridge.
-	 * </p>
-	 *
-	 * @param bridge componente utilizado para enviar mensajes a Kafka
-	 */
-	public ProductCommandServiceImpl(StreamBridge bridge) {
-		
-		// Asigna la instancia recibida a la variable de clase.
+	public ProductCommandServiceImpl(StreamBridge bridge, ReplyInbox replyInbox) {
 		this.bridge = bridge;
+		this.replyInbox = replyInbox;
 	}
 	
-	
-	/**
-	 * Envia un comando CREATE hacia Kafka
-	 * para crear un producto.
-	 *
-	 * <p>
-	 * El metodo construye un objeto Command<ProductDto>
-	 * y lo publica en el canal:
-	 * </p>
-	 *
-	 * <pre>
-	 * commands-out-0
-	 * </pre>
-	 *
-	 * <p>
-	 * Finalmente el mensaje llega al topic Kafka:
-	 * </p>
-	 *
-	 * <pre>
-	 * products.commands
-	 * </pre>
-	 *
-	 * @param dto informacion del producto a crear
-	 */
 	@Override
-	public void sendCreate(ProductDto dto) {
+	public Reply<?> sendCreateAndAwait(ProductDto dto, Duration timeout) {
 		
-		// Construye un comando de tipo CREATE.
-		//
-		// Estructura:
-		//
-		// type -> tipo de operacion
-		// id   -> identificador (null porque aun no existe)
-		// body -> datos del producto
+        // Se crea un comando con la acción "CREATE", sin id y con el DTO como payload
 		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", null, dto);
 		
+		// Se genera un correlationId único para correlacionar la respuesta con el comando enviado
+		String correlationId = UUID.randomUUID().toString();
 		
-		// Envia el comando al canal:
-		//
-		// commands-out-0
-		//
-		// Spring Cloud Stream automaticamente
-		// lo enviara al topic Kafka configurado.
-		//
-		// El metodo retorna:
-		//
-		// true  -> mensaje enviado correctamente
-		// false -> fallo en el envio
-		boolean hasBeenSent = this.bridge.send("commands-out-0", cmd);
+		logger.info("Api Products Client Creating product with correlationId: {}", correlationId);
 		
+		// Se registra el correlationId en el ReplyInbox para esperar la respuesta correspondiente
+		CompletableFuture<Reply<?>> future = this.replyInbox.register(correlationId);
 		
-		// Valida si el mensaje NO pudo enviarse.
+		// Se construye el mensaje con el comando como payload y el correlationId en los headers
+		Message<Command<ProductDto>> msg = MessageBuilder
+				.withPayload(cmd).setHeader("correlationId", correlationId).build();
+		
+		// Se envía el mensaje al topic "commands-out-0" utilizando el StreamBridge y se verifica si el envío fue exitoso
+		boolean hasBeenSent = this.bridge.send("commands-out-0", msg);
+		
+		// Si el mensaje no se pudo enviar, se lanza una excepción indicando que no se pudo enviar el comando a Kafka
 		if(!hasBeenSent) {
-			
-			// Lanza una excepcion indicando
-			// que el envio fallo.
 			throw new IllegalStateException("No se pudo enviar el comando a Kafka");
+		}
+		
+		try {
+			// Se espera la respuesta del comando utilizando el correlationId registrado en el ReplyInbox, con un timeout especificado
+			return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error al esperar la respuesta del comando products-commands desde kafka.");
 		}
 	}
 
