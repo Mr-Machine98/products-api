@@ -37,30 +37,33 @@ public class ProductCommandServiceImpl implements IProductCommandService {
 	
 	@Override
 	public Reply<?> sendCreateAndAwait(ProductDto dto, Duration timeout) {
-		
         // Se crea un comando con la acción "CREATE", sin id y con el DTO como payload
 		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", null, dto);
-		
+		return sendAndAwait(cmd, timeout);
+	}
+
+	@Override
+	public Reply<?> sendReadAndAwait(Long id, Duration timeout) {
+		// Se crea un comando con la acción "READ", con el id del producto a leer y sin payload
+		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", id, null);
+		return sendAndAwait(cmd, timeout);
+	}
+
+	private Reply<?> sendAndAwait(Command<ProductDto> cmd, Duration timeout) {
 		// Se genera un correlationId único para correlacionar la respuesta con el comando enviado
 		String correlationId = UUID.randomUUID().toString();
-		
 		logger.info("Api Products Client Creating product with correlationId: {}", correlationId);
-		
 		// Se registra el correlationId en el ReplyInbox para esperar la respuesta correspondiente
 		CompletableFuture<Reply<?>> future = this.replyInbox.register(correlationId);
-		
 		// Se construye el mensaje con el comando como payload y el correlationId en los headers
 		Message<Command<ProductDto>> msg = MessageBuilder
 				.withPayload(cmd).setHeader("correlationId", correlationId).build();
-		
 		// Se envía el mensaje al topic "commands-out-0" utilizando el StreamBridge y se verifica si el envío fue exitoso
 		boolean hasBeenSent = this.bridge.send("commands-out-0", msg);
-		
 		// Si el mensaje no se pudo enviar, se lanza una excepción indicando que no se pudo enviar el comando a Kafka
 		if(!hasBeenSent) {
 			throw new IllegalStateException("No se pudo enviar el comando a Kafka");
 		}
-		
 		try {
 			// Se espera la respuesta del comando utilizando el correlationId registrado en el ReplyInbox, con un timeout especificado
 			return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);

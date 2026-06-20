@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -34,6 +38,25 @@ public class ProductController {
 	public ResponseEntity<?> create(@Valid @RequestBody ProductDto dto) {
 		// Se envía el mensaje al topic y se espera la respuesta con un timeout de 5 segundos
 		Reply<?> reply = this.service.sendCreateAndAwait(dto, Duration.ofSeconds(5));
+		return getResponseEntity(reply);
+	}
+	
+	/*
+	 * Método para obtener un producto por su id, recibe el id del producto como parámetro
+	 * y devuelve una respuesta con el resultado de la operación
+	 */
+	@GetMapping("/{id}")
+	public ResponseEntity<?> getByid(@PathVariable Long id) {
+		Reply<?> reply = this.service.sendReadAndAwait(id, Duration.ofSeconds(5));
+		return getResponseEntity(reply);
+	}
+
+	/*
+	 * Método para obtener una respuesta HTTP a partir de un Reply, si el estado del Reply es SUCCESS se devuelve el
+	 *  cuerpo de la respuesta
+	 * con un status 200 OK, de lo contrario se devuelve un error con el mensaje del Reply y un status 400 Bad Request
+	 */
+	private ResponseEntity<?> getResponseEntity(Reply<?> reply) {
 		// Se verifica el estado de la respuesta si es SUCCESS 
 		// se devuelve el cuerpo de la respuesta, de lo contratio se devuelve un error con el mensaje de la respuesta
 		if("SUCCESS".equalsIgnoreCase(reply.status())) {
@@ -42,5 +65,6 @@ public class ProductController {
 		// Si el estado no es SUCCESS, se devuelve un error con el mensaje de la respuesta
 		return ResponseEntity.badRequest().body(Map.of("error", reply.message()));
 	}
+	
 	
 }
