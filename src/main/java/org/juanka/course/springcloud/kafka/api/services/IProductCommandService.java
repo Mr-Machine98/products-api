@@ -20,6 +20,34 @@ public interface IProductCommandService {
 	 */
 	Reply<?> sendCreateAndAwait(ProductDto dto, Duration tiemout);
 	
+	/**
+	 * Método para enviar un comando de lectura de producto al topic de Kafka y esperar la respuesta con un timeout
+	 * @param id ID del producto a leer
+	 * @param tiemout Duración máxima para esperar la respuesta del comando, si se supera el timeout se devuelve un error
+	 * @return Reply con el resultado de la operación, si el comando se ejecuta correctamente se devuelve un Reply con 
+	 * status SUCCESS y el cuerpo con los datos del producto leído, de lo contrario se devuelve un Reply con status ERROR y 
+	 * el mensaje con el error ocurrido
+	 */
 	Reply<?> sendReadAndAwait(Long id, Duration timeout);
+	
+	/**
+	 * Método para enviar un comando de lectura de todos los productos al topic de Kafka y esperar la respuesta con un timeout
+	 * @param tiemout Duración máxima para esperar la respuesta del comando, si se supera el timeout se devuelve un error
+	 * @return Reply con el resultado de la operación, si el comando se ejecuta correctamente se devuelve un Reply con 
+	 * status SUCCESS y el cuerpo con la lista de productos leídos, de lo contrario se devuelve un Reply con status ERROR y 
+	 * el mensaje con el error ocurrido
+	 */
+	Reply<?> sendReadAllAndAwait(Duration timeout);
+	
+	/**
+	 * Método para enviar un comando de actualización de producto al topic de Kafka y esperar la respuesta con un timeout
+	 * @param dto DTO con los datos del producto a actualizar, el ID del producto a actualizar se obtiene del parámetro id
+	 * @param id ID del producto a actualizar
+	 * @param tiemout Duración máxima para esperar la respuesta del comando, si se supera el timeout se devuelve un error
+	 * @return Reply con el resultado de la operación, si el comando se ejecuta correctamente se devuelve un Reply con 
+	 * status SUCCESS y el cuerpo con los datos del producto actualizado, de lo contrario se devuelve un Reply con status ERROR y 
+	 * el mensaje con el error ocurrido
+	 */
+	Reply<?> sendUpdateAndAwait(ProductDto dto, Long id, Duration tiemout);
 	
 }

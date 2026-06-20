@@ -48,6 +48,19 @@ public class ProductCommandServiceImpl implements IProductCommandService {
 		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", id, null);
 		return sendAndAwait(cmd, timeout);
 	}
+	
+	@Override
+	public Reply<?> sendReadAllAndAwait(Duration timeout) {
+		// Se crea un comando con la acción "READ_ALL", sin id y sin payload
+		return sendAndAwait(new Command<ProductDto>("READ_ALL", null, null), timeout);
+	}
+
+	@Override
+	public Reply<?> sendUpdateAndAwait(ProductDto dto, Long id, Duration tiemout) {
+		// Se crea un comando con la acción "UPDATE", con el id del producto a actualizar y con el DTO como payload
+		Command<ProductDto> cmd = new Command<>("UPDATE", id, dto);
+		return sendAndAwait(cmd, tiemout);
+	}
 
 	private Reply<?> sendAndAwait(Command<ProductDto> cmd, Duration timeout) {
 		// Se genera un correlationId único para correlacionar la respuesta con el comando enviado

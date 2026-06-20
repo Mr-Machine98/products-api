@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
-
+import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @RequestMapping("/products")
@@ -50,7 +48,26 @@ public class ProductController {
 		Reply<?> reply = this.service.sendReadAndAwait(id, Duration.ofSeconds(5));
 		return getResponseEntity(reply);
 	}
-
+	
+	/*
+	 * Método para obtener todos los productos, no recibe parámetros y devuelve una respuesta con el resultado de la operación
+	 */
+	@GetMapping
+	public ResponseEntity<?> getAll() {
+		Reply<?> reply = this.service.sendReadAllAndAwait(Duration.ofSeconds(5));
+		return getResponseEntity(reply);
+	}
+	
+	/*
+	 * Método para actualizar un producto, recibe el id del producto a actualizar como parámetro y un DTO con los datos a actualizar
+	 * y devuelve una respuesta con el resultado de la operación
+	 */
+	@PutMapping("/{id}")
+	public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody ProductDto dto) {
+		Reply<?> reply = this.service.sendUpdateAndAwait(dto, id, Duration.ofSeconds(5));
+		return getResponseEntity(reply);
+	}
+	
 	/*
 	 * Método para obtener una respuesta HTTP a partir de un Reply, si el estado del Reply es SUCCESS se devuelve el
 	 *  cuerpo de la respuesta
