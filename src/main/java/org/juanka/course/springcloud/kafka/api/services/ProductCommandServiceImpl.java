@@ -61,15 +61,22 @@ public class ProductCommandServiceImpl implements IProductCommandService {
 		Command<ProductDto> cmd = new Command<>("UPDATE", id, dto);
 		return sendAndAwait(cmd, tiemout);
 	}
+	
+	@Override
+	public Reply<?> sendDeleteAndAwait(Long id, Duration timeout) {
+		// Se crea un comando con la acción "DELETE", con el id del producto a eliminar y sin payload
+		Command<Object> cmd = new Command<>("DELETE", id, null);
+		return sendAndAwait(cmd, timeout);
+	}
 
-	private Reply<?> sendAndAwait(Command<ProductDto> cmd, Duration timeout) {
+	private Reply<?> sendAndAwait(Command<?> cmd, Duration timeout) {
 		// Se genera un correlationId único para correlacionar la respuesta con el comando enviado
 		String correlationId = UUID.randomUUID().toString();
 		logger.info("Api Products Client Creating product with correlationId: {}", correlationId);
 		// Se registra el correlationId en el ReplyInbox para esperar la respuesta correspondiente
 		CompletableFuture<Reply<?>> future = this.replyInbox.register(correlationId);
 		// Se construye el mensaje con el comando como payload y el correlationId en los headers
-		Message<Command<ProductDto>> msg = MessageBuilder
+		Message<?> msg = MessageBuilder
 				.withPayload(cmd).setHeader("correlationId", correlationId).build();
 		// Se envía el mensaje al topic "commands-out-0" utilizando el StreamBridge y se verifica si el envío fue exitoso
 		boolean hasBeenSent = this.bridge.send("commands-out-0", msg);

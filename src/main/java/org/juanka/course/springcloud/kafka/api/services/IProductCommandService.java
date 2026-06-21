@@ -50,4 +50,14 @@ public interface IProductCommandService {
 	 */
 	Reply<?> sendUpdateAndAwait(ProductDto dto, Long id, Duration tiemout);
 	
+	/**
+	 * Método para enviar un comando de eliminación de producto al topic de Kafka y esperar la respuesta con un timeout
+	 * @param id ID del producto a eliminar
+	 * @param tiemout Duración máxima para esperar la respuesta del comando, si se supera el timeout se devuelve un error
+	 * @return Reply con el resultado de la operación, si el comando se ejecuta correctamente se devuelve un Reply con 
+	 * status SUCCESS y el cuerpo con un mensaje indicando que el producto fue eliminado, de lo contrario se devuelve un Reply con status ERROR y 
+	 * el mensaje con el error ocurrido
+	 */
+	Reply<?> sendDeleteAndAwait(Long id, Duration timeout);
+	
 }
