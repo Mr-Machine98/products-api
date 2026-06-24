@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.juanka.course.springcloud.kafka.api.models.dto.ProductDto;
 import org.juanka.course.springcloud.kafka.api.models.dto.Reply;
+import org.juanka.course.springcloud.kafka.api.models.enums.ReplyStatus;
 import org.juanka.course.springcloud.kafka.api.services.IProductCommandService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,8 +37,7 @@ public class ProductController {
 	@PostMapping
 	public ResponseEntity<?> create(@Valid @RequestBody ProductDto dto) {
 		// Se envía el mensaje al topic y se espera la respuesta con un timeout de 5 segundos
-		Reply<?> reply = this.service.sendCreateAndAwait(dto, Duration.ofSeconds(5));
-		return getResponseEntity(reply);
+		return getResponseEntity(this.service.sendCreateAndAwait(dto, Duration.ofSeconds(5)));
 	}
 	
 	/*
@@ -46,8 +46,7 @@ public class ProductController {
 	 */
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getByid(@PathVariable Long id) {
-		Reply<?> reply = this.service.sendReadAndAwait(id, Duration.ofSeconds(5));
-		return getResponseEntity(reply);
+		return getResponseEntity(this.service.sendReadAndAwait(id, Duration.ofSeconds(5)));
 	}
 	
 	/*
@@ -55,8 +54,7 @@ public class ProductController {
 	 */
 	@GetMapping
 	public ResponseEntity<?> getAll() {
-		Reply<?> reply = this.service.sendReadAllAndAwait(Duration.ofSeconds(5));
-		return getResponseEntity(reply);
+		return getResponseEntity(this.service.sendReadAllAndAwait(Duration.ofSeconds(5)));
 	}
 	
 	/*
@@ -65,8 +63,7 @@ public class ProductController {
 	 */
 	@PutMapping("/{id}")
 	public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody ProductDto dto) {
-		Reply<?> reply = this.service.sendUpdateAndAwait(dto, id, Duration.ofSeconds(5));
-		return getResponseEntity(reply);
+		return getResponseEntity(this.service.sendUpdateAndAwait(dto, id, Duration.ofSeconds(5)));
 	}
 	
 	/*
@@ -75,8 +72,7 @@ public class ProductController {
 	 */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		Reply<?> reply = this.service.sendDeleteAndAwait(id, Duration.ofSeconds(5));
-		return getResponseEntity(reply);
+		return getResponseEntity(this.service.sendDeleteAndAwait(id, Duration.ofSeconds(5)));
 	}
 	
 	/*
@@ -87,7 +83,7 @@ public class ProductController {
 	private ResponseEntity<?> getResponseEntity(Reply<?> reply) {
 		// Se verifica el estado de la respuesta si es SUCCESS 
 		// se devuelve el cuerpo de la respuesta, de lo contratio se devuelve un error con el mensaje de la respuesta
-		if("SUCCESS".equalsIgnoreCase(reply.status())) {
+		if(reply.status().isSuccess()) {
 			return ResponseEntity.ok(reply.body());
 		}
 		// Si el estado no es SUCCESS, se devuelve un error con el mensaje de la respuesta

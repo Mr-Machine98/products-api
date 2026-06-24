@@ -13,6 +13,7 @@ import org.juanka.course.springcloud.kafka.api.messaging.ReplyInbox;
 import org.juanka.course.springcloud.kafka.api.models.Command;
 import org.juanka.course.springcloud.kafka.api.models.dto.ProductDto;
 import org.juanka.course.springcloud.kafka.api.models.dto.Reply;
+import org.juanka.course.springcloud.kafka.api.models.enums.CommandType;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -38,35 +39,31 @@ public class ProductCommandServiceImpl implements IProductCommandService {
 	@Override
 	public Reply<?> sendCreateAndAwait(ProductDto dto, Duration timeout) {
         // Se crea un comando con la acción "CREATE", sin id y con el DTO como payload
-		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", null, dto);
-		return sendAndAwait(cmd, timeout);
+		return sendAndAwait(new Command<ProductDto>(CommandType.CREATE, null, dto), timeout);
 	}
 
 	@Override
 	public Reply<?> sendReadAndAwait(Long id, Duration timeout) {
 		// Se crea un comando con la acción "READ", con el id del producto a leer y sin payload
-		Command<ProductDto> cmd = new Command<ProductDto>("CREATE", id, null);
-		return sendAndAwait(cmd, timeout);
+		return sendAndAwait(new Command<ProductDto>(CommandType.UPDATE, id, null), timeout);
 	}
 	
 	@Override
 	public Reply<?> sendReadAllAndAwait(Duration timeout) {
 		// Se crea un comando con la acción "READ_ALL", sin id y sin payload
-		return sendAndAwait(new Command<ProductDto>("READ_ALL", null, null), timeout);
+		return sendAndAwait(new Command<ProductDto>(CommandType.READ_ALL, null, null), timeout);
 	}
 
 	@Override
 	public Reply<?> sendUpdateAndAwait(ProductDto dto, Long id, Duration tiemout) {
 		// Se crea un comando con la acción "UPDATE", con el id del producto a actualizar y con el DTO como payload
-		Command<ProductDto> cmd = new Command<>("UPDATE", id, dto);
-		return sendAndAwait(cmd, tiemout);
+		return sendAndAwait(new Command<>(CommandType.UPDATE, id, dto), tiemout);
 	}
 	
 	@Override
 	public Reply<?> sendDeleteAndAwait(Long id, Duration timeout) {
 		// Se crea un comando con la acción "DELETE", con el id del producto a eliminar y sin payload
-		Command<Object> cmd = new Command<>("DELETE", id, null);
-		return sendAndAwait(cmd, timeout);
+		return sendAndAwait(new Command<>(CommandType.DELETE, id, null), timeout);
 	}
 
 	private Reply<?> sendAndAwait(Command<?> cmd, Duration timeout) {

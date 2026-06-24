@@ -1,3 +1,5 @@
 package org.juanka.course.springcloud.kafka.api.models;
 
-public record Command<T>(String type, Long id, T body) {}
+import org.juanka.course.springcloud.kafka.api.models.enums.CommandType;
+
+public record Command<T>(CommandType type, Long id, T body) {}
