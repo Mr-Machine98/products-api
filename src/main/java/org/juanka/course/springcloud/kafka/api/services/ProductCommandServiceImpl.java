@@ -45,7 +45,7 @@ public class ProductCommandServiceImpl implements IProductCommandService {
 	@Override
 	public Reply<?> sendReadAndAwait(Long id, Duration timeout) {
 		// Se crea un comando con la acción "READ", con el id del producto a leer y sin payload
-		return sendAndAwait(new Command<ProductDto>(CommandType.UPDATE, id, null), timeout);
+		return sendAndAwait(new Command<ProductDto>(CommandType.READ, id, null), timeout);
 	}
 	
 	@Override
