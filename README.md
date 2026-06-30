@@ -4,6 +4,8 @@
 
 Este microservicio expone una API REST para operaciones CRUD sobre productos, pero no guarda los datos localmente. En lugar de ello, funciona como un gateway de comandos hacia Kafka usando Spring Cloud Stream. Las solicitudes REST se convierten en comandos Kafka y el servicio espera una respuesta correlacionada para devolver el resultado al cliente.
 
+Para visitar el microservicio de destino donde  recibe los mensajes KAFKA que le enviamos desde el origen visita el micro [products-command](https://github.com/Mr-Machine98/products-command)
+
 ## Arquitectura general
 
 - `ProductController` expone los endpoints REST.
